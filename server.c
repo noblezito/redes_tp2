@@ -311,7 +311,7 @@ int main(int argc, char **argv) {
     int port_num = atoi(argv[2]);
     int battle_fields[NUM_OF_SERVERS][NUM_OF_STEPS];
 
-    struct timeval recvtimeout[4];
+    // struct timeval recvtimeout[4];
     struct sockaddr_storage cliaddr;
     struct sockaddr_storage storage[NUM_OF_SERVERS];
     struct pokemon_defense defense_pokemons[NUM_OF_DEFENSE_POKEMONS];
@@ -339,11 +339,11 @@ int main(int argc, char **argv) {
         }
 
         
-        recvtimeout[i].tv_sec = 1;
-        recvtimeout[i].tv_usec = 0;
-        if (setsockopt(sockfd[i], SOL_SOCKET, SO_RCVTIMEO, &recvtimeout[i], sizeof(recvtimeout[i])) < 0) {
-            perror("setsockopt error");
-        }
+        // recvtimeout[i].tv_sec = 0;
+        // recvtimeout[i].tv_usec = 10000;
+        // if (setsockopt(sockfd[i], SOL_SOCKET, SO_RCVTIMEO, &recvtimeout[i], sizeof(recvtimeout[i])) < 0) {
+        //     perror("setsockopt error");
+        // }
         
         // Bind the socket with the server address
         if ( bind(sockfd[i], (const struct sockaddr *)&storage[i], sizeof(storage[i])) < 0 )
@@ -360,18 +360,24 @@ int main(int argc, char **argv) {
         memset(&cliaddr, 0, sizeof(cliaddr));
         socklen_t len = sizeof(cliaddr);  //len is value/resuslt
 
-        do{
-            memset(&cliaddr, 0, sizeof(cliaddr));
+        // do{
+            // memset(buf, 0, sizeof(buf));
+            // memset(&cliaddr, 0, sizeof(cliaddr));
             n = recvfrom(sockfd[0], (char *)buf, BUFSZ, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
-        }while(n<0);
+        // }while(n<0);
         printf("RECEIVED %s", buf);
         printf("\nN: %d\n", n);
 
         // QUIT
-        if(!strcmp("quit\n", buf)) break;
+        if(!strcmp("quit\n", buf)) {
+            for(int i=0; i<4; i++){
+                close(sockfd[i]);
+            }
+            break;
+        }
 
         // START
-        if(!strcmp("start", buf)){
+        else if(!strcmp("start", buf)){
             initialize_attack_pokemons(attack_pokemons);
             initialize_battle_fields(battle_fields);
             initialize_defense_pokemons(defense_pokemons);
