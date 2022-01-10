@@ -20,7 +20,6 @@ void usage(int argc, char **argv) {
 
 int main(int argc, char **argv) {
 	int sockfd, port_num, n;
-    int enable = 1;
     char send_to_server[BUFSZ], receive_from_server[BUFSZ];
     socklen_t len;
     struct sockaddr_in servaddr[4];
@@ -39,12 +38,6 @@ int main(int argc, char **argv) {
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &recvtimeout, sizeof(recvtimeout)) < 0) {
         perror("setsockopt error");
     }
-    // if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
-    //     perror("setsockopt error");
-    // }
-    // if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) < 0) {
-    //     perror("setsockopt error");
-    // }
     
     port_num = htons(atoi(argv[2]));
     for(int server_num=0; server_num<NUM_OF_SERVERS; server_num++){
@@ -82,19 +75,16 @@ int main(int argc, char **argv) {
 
         for(int server_num=0; server_num<NUM_OF_SERVERS; server_num++){
             memset(receive_from_server, 0, sizeof(receive_from_server));
-            while((n = recvfrom(sockfd, (char *)receive_from_server, sizeof(receive_from_server), MSG_WAITALL, (struct sockaddr *) &servaddr[server_num], &len)) < 0){
+            while((n = recvfrom(sockfd, (char *)receive_from_server, sizeof(receive_from_server), 0, (struct sockaddr *) &servaddr[server_num], &len)) < 0){
                     memset(&servaddr[0], 0, sizeof(servaddr[0]));
                     
                     // Filling server information
+                    if(strcmp(receive_from_server, "")) break;
                     servaddr[0].sin_family = AF_INET;
                     servaddr[0].sin_port = htons(atoi(argv[2]));;
                     servaddr[0].sin_addr.s_addr = INADDR_ANY;
 
-                    printf("Tá aqui: %s\n", receive_from_server);
-
                     sendto(sockfd, (const char *)send_to_server, sizeof(send_to_server), MSG_WAITALL, (const struct sockaddr *) &servaddr[0], sizeof(servaddr[0]));
-                    printf("N: %d", n);
-                // break;
             }
             
             receive_from_server[n] = '\0';

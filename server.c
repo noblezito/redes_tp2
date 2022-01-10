@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -23,8 +22,6 @@ void usage(int argc, char **argv) {
 
 int defender_exists_and_didnt_attack(struct pokemon_defense defense_pokemons[NUM_OF_DEFENSE_POKEMONS], 
                                      int x_pos, int y_pos){
-
-    printf("Chegou no teste 1\n");
     for(int i=0; i<NUM_OF_DEFENSE_POKEMONS; i++){
         if(defense_pokemons[i].x_pos == x_pos &&
            defense_pokemons[i].y_pos == y_pos &&
@@ -208,7 +205,6 @@ void send_shotresp_to_client(int sockfd, struct sockaddr_storage cliaddr, char *
 }
 
 int pokemon_id_exists(struct pokemon_attack attack_pokemons[MAX_NUM_OF_ATTACK_POKEMONS], int attacker_id){
-    printf("Chegou no teste 2\n");
     for(int i=0; i<MAX_NUM_OF_ATTACK_POKEMONS; i++){
         if(attack_pokemons[i].id == attacker_id) return 1;
     }
@@ -216,7 +212,6 @@ int pokemon_id_exists(struct pokemon_attack attack_pokemons[MAX_NUM_OF_ATTACK_PO
 }
 
 int defender_is_next_to_attacker(int defender_x_pos, int defender_y_pos, int battle_field[NUM_OF_STEPS], int attacker_id, int attacker_server_num){
-    printf("Chegou no teste 3\n");
     int attacker_array_pos = 0;
     for(int i=0; i<NUM_OF_STEPS; i++){
         if(battle_field[i] == attacker_id){
@@ -225,9 +220,7 @@ int defender_is_next_to_attacker(int defender_x_pos, int defender_y_pos, int bat
         }
     }
 
-    printf("DefenderYPos %d / DefenderXPos %d / AttackerArrayPos %d / AttackerServerNum %d\n", defender_y_pos, defender_x_pos, attacker_array_pos, attacker_server_num);
     if((defender_y_pos == attacker_array_pos+1) && (defender_x_pos == attacker_server_num || defender_x_pos == attacker_server_num+1)){
-        printf("Passou no teste 3\n");
         return 1;
     }
     else return 0;   
@@ -263,15 +256,13 @@ void attack_pokemon(struct pokemon_attack attack_pokemons[MAX_NUM_OF_ATTACK_POKE
             attack_pokemons[i].life--;
             if(attack_pokemons[i].life <= 0){
                 for(int h=0; h<NUM_OF_STEPS; h++){
-                    if(battle_field[h] == attacker_id) battle_field_pos = h;
-                    break;
+                    if(battle_field[h] == attacker_id){
+                        battle_field_pos = h;
+                        break;
+                    }
                 }
-                printf("POS %d\n", battle_field_pos);
                 kill_pokemon_and_free_battle_field_space(attack_pokemons, attack_pokemons[i].id, battle_field_pos, battle_field);
                 break;
-            }
-            else{
-                printf("Não matou\n");
             }
         }
     }
@@ -305,13 +296,11 @@ int get_attacker_server_num(int attacker_id, int battle_fields[NUM_OF_SERVERS][N
 }
 
 int main(int argc, char **argv) {
-    int n;
     int sockfd[NUM_OF_SERVERS];
     char buf[BUFSZ];
     int port_num = atoi(argv[2]);
     int battle_fields[NUM_OF_SERVERS][NUM_OF_STEPS];
 
-    // struct timeval recvtimeout[4];
     struct sockaddr_storage cliaddr;
     struct sockaddr_storage storage[NUM_OF_SERVERS];
     struct pokemon_defense defense_pokemons[NUM_OF_DEFENSE_POKEMONS];
@@ -337,13 +326,6 @@ int main(int argc, char **argv) {
             perror("socket creation failed");
             exit(EXIT_FAILURE);
         }
-
-        
-        // recvtimeout[i].tv_sec = 0;
-        // recvtimeout[i].tv_usec = 10000;
-        // if (setsockopt(sockfd[i], SOL_SOCKET, SO_RCVTIMEO, &recvtimeout[i], sizeof(recvtimeout[i])) < 0) {
-        //     perror("setsockopt error");
-        // }
         
         // Bind the socket with the server address
         if ( bind(sockfd[i], (const struct sockaddr *)&storage[i], sizeof(storage[i])) < 0 )
@@ -360,13 +342,7 @@ int main(int argc, char **argv) {
         memset(&cliaddr, 0, sizeof(cliaddr));
         socklen_t len = sizeof(cliaddr);  //len is value/resuslt
 
-        // do{
-            // memset(buf, 0, sizeof(buf));
-            // memset(&cliaddr, 0, sizeof(cliaddr));
-            n = recvfrom(sockfd[0], (char *)buf, BUFSZ, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
-        // }while(n<0);
-        printf("RECEIVED %s", buf);
-        printf("\nN: %d\n", n);
+        recvfrom(sockfd[0], (char *)buf, BUFSZ, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
 
         // QUIT
         if(!strcmp("quit\n", buf)) {
@@ -377,7 +353,7 @@ int main(int argc, char **argv) {
         }
 
         // START
-        else if(!strcmp("start", buf)){
+        else if(!strcmp("start", buf) || !strcmp("start\n", buf)){
             initialize_attack_pokemons(attack_pokemons);
             initialize_battle_fields(battle_fields);
             initialize_defense_pokemons(defense_pokemons);
@@ -407,10 +383,6 @@ int main(int argc, char **argv) {
                      defense_pokemons[4].y_pos,
                      defense_pokemons[5].x_pos,
                      defense_pokemons[5].y_pos
-                    //  defense_pokemons[6].x_pos,
-                    //  defense_pokemons[6].y_pos,
-                    //  defense_pokemons[7].x_pos,
-                    //  defense_pokemons[7].y_pos
             );
             sendto(sockfd[0], (const char *)defenders_response, BUFSZ, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
             free(defenders_response);
@@ -469,30 +441,25 @@ int main(int argc, char **argv) {
                 int defender_y_pos = atoi(received_params[1]);
                 int attacker_id = atoi(received_params[2]);
 
-                printf("X: %d / Y: %d / ID: %d\n", defender_x_pos, defender_y_pos, attacker_id);
 
                 char* status = (char *)malloc(sizeof(char)*1);
 
                 int attacker_server_num = 0;
                 if(pokemon_id_exists(attack_pokemons, attacker_id)){
                     attacker_server_num = get_attacker_server_num(attacker_id, battle_fields);
-                    printf("ATTACKER SERVER NUM %d\n", attacker_server_num);
 
                     if( defender_exists_and_didnt_attack(defense_pokemons, defender_x_pos, defender_y_pos) &&
                         defender_is_next_to_attacker(defender_x_pos, defender_y_pos, battle_fields[attacker_server_num], attacker_id, attacker_server_num)){
-                            printf("Vai atacar\n");
 
                             inform_defense_attacked(defense_pokemons, defender_x_pos, defender_y_pos);
                             attack_pokemon(attack_pokemons, attacker_id, battle_fields[attacker_server_num]);
                             strcpy(status, "0");
                     }
                     else{
-                        printf("Não vai atacar pq tem algum erro\n");
                         strcpy(status, "1");
                     }
                 }
                 else{
-                    printf("Não vai atacar pq tem algum erro\n");
                     strcpy(status, "1");
                 }
 
