@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -301,6 +302,7 @@ int main(int argc, char **argv) {
     int port_num = atoi(argv[2]);
     int battle_fields[NUM_OF_SERVERS][NUM_OF_STEPS];
 
+    struct timeval begin, end;
     struct sockaddr_storage cliaddr;
     struct sockaddr_storage storage[NUM_OF_SERVERS];
     struct pokemon_defense defense_pokemons[NUM_OF_DEFENSE_POKEMONS];
@@ -354,6 +356,7 @@ int main(int argc, char **argv) {
 
         // START
         else if(!strcmp("start", buf) || !strcmp("start\n", buf)){
+            gettimeofday(&begin, 0);
             initialize_attack_pokemons(attack_pokemons);
             initialize_battle_fields(battle_fields);
             initialize_defense_pokemons(defense_pokemons);
@@ -416,9 +419,11 @@ int main(int argc, char **argv) {
                 if(turn==0) spawn_chance = 100;
                 if(turn==50){ // GAMEOVER
                     int status = 0;
+                    gettimeofday(&end, 0);
+                    int game_time = end.tv_sec - begin.tv_sec;
                     char *game_over_message = (char *)malloc(BUFSZ);
 
-                    snprintf(game_over_message, BUFSZ, "gameover %d %d %d <time>", status, num_of_pokemons_killed, num_of_winner_pokemons);
+                    snprintf(game_over_message, BUFSZ, "gameover %d %d %d %d", status, num_of_pokemons_killed, num_of_winner_pokemons, game_time);
                     sendto(sockfd[0], game_over_message, BUFSZ, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
                     free(game_over_message);
                     continue;
@@ -470,9 +475,11 @@ int main(int argc, char **argv) {
             // GAME OVER
             else{
                 int status = 1;
+                gettimeofday(&end, 0);
+                int game_time = end.tv_sec - begin.tv_sec;
                 char *game_over_message = (char *)malloc(BUFSZ);
 
-                snprintf(game_over_message, BUFSZ, "gameover %d %d %d <time>", status, num_of_pokemons_killed, num_of_winner_pokemons);
+                snprintf(game_over_message, BUFSZ, "gameover %d %d %d %d", status, num_of_pokemons_killed, num_of_winner_pokemons, game_time);
                 sendto(sockfd[0], game_over_message, BUFSZ, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
                 free(game_over_message);
             }
