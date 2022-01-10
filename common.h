@@ -7,7 +7,7 @@
 const int NUM_OF_SERVERS = 4;
 const int BUFSZ = 1024;
 const int NUM_OF_STEPS = 4;
-const int NUM_OF_DEFENSE_POKEMONS = 8;
+const int NUM_OF_DEFENSE_POKEMONS = 6;
 const int MAX_NUM_OF_ATTACK_POKEMONS = 16;
 
 struct pokemon_attack
