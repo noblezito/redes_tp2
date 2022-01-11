@@ -311,17 +311,7 @@ int main(int argc, char **argv) {
     for(int i=0; i<NUM_OF_SERVERS; i++){
 
         // Filling server information
-        if (0 == strcmp(argv[1], "v4")) {
-            struct sockaddr_in *addr4 = (struct sockaddr_in *)&storage[i];
-            addr4->sin_family = AF_INET;
-            addr4->sin_addr.s_addr = INADDR_ANY;
-            addr4->sin_port = htons(port_num);
-        } else if (0 == strcmp(argv[1], "v6")) {
-            struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&storage[i];
-            addr6->sin6_family = AF_INET6;
-            addr6->sin6_addr = in6addr_any;
-            addr6->sin6_port = htons(port_num);
-        }
+        if (0 != server_sockaddr_init(argv[1], port_num, &storage[i])) usage(argc, argv);
 
         // Creating socket file descriptor
         if ( (sockfd[i] = socket(storage[i].ss_family, SOCK_DGRAM, 0)) < 0 ) {

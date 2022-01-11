@@ -22,32 +22,33 @@ int main(int argc, char **argv) {
 	int sockfd, port_num, n;
     char send_to_server[BUFSZ], receive_from_server[BUFSZ];
     socklen_t len;
-    struct sockaddr_in servaddr[4];
+    struct sockaddr_storage servaddr[4];
     struct timeval recvtimeout;
     recvtimeout.tv_sec = 0;
     recvtimeout.tv_usec = 10000;
 
     if (argc < 4 || strcmp("start", argv[3])) {
+        printf("%d\n", argc);
 		usage(argc, argv);
 	}
-
-    if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
-    }
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &recvtimeout, sizeof(recvtimeout)) < 0) {
-        perror("setsockopt error");
-    }
     
     port_num = htons(atoi(argv[2]));
     for(int server_num=0; server_num<NUM_OF_SERVERS; server_num++){
         memset(&servaddr[server_num], 0, sizeof(servaddr[server_num]));
         
-        // Filling server information
-        servaddr[server_num].sin_family = AF_INET;
-        servaddr[server_num].sin_port = port_num;
-        servaddr[server_num].sin_addr.s_addr = INADDR_ANY;
+        if (0 != addrparse(argv[1], port_num, &servaddr[server_num])){
+            printf("test\n");
+            usage(argc, argv);
+        }
         port_num ++;
+    }
+
+    if ( (sockfd = socket(servaddr[0].ss_family, SOCK_DGRAM, 0)) < 0 ) {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &recvtimeout, sizeof(recvtimeout)) < 0) {
+        perror("setsockopt error");
     }
 
     int is_start_message = 1;
@@ -79,11 +80,9 @@ int main(int argc, char **argv) {
                     memset(&servaddr[0], 0, sizeof(servaddr[0]));
                     
                     // Filling server information
+                    printf("TESTE\n");
                     if(strcmp(receive_from_server, "")) break;
-                    servaddr[0].sin_family = AF_INET;
-                    servaddr[0].sin_port = htons(atoi(argv[2]));;
-                    servaddr[0].sin_addr.s_addr = INADDR_ANY;
-
+                    if (0 != addrparse(argv[1], atoi(argv[2]), &servaddr[server_num])) usage(argc, argv);
                     sendto(sockfd, (const char *)send_to_server, sizeof(send_to_server), MSG_WAITALL, (const struct sockaddr *) &servaddr[0], sizeof(servaddr[0]));
             }
             
