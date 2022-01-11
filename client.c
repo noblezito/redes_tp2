@@ -80,7 +80,6 @@ int main(int argc, char **argv) {
                     memset(&servaddr[0], 0, sizeof(servaddr[0]));
                     
                     // Filling server information
-                    printf("TESTE\n");
                     if(strcmp(receive_from_server, "")) break;
                     if (0 != addrparse(argv[1], atoi(argv[2]), &servaddr[server_num])) usage(argc, argv);
                     sendto(sockfd, (const char *)send_to_server, sizeof(send_to_server), MSG_WAITALL, (const struct sockaddr *) &servaddr[0], sizeof(servaddr[0]));
