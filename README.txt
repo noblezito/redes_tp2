@@ -9,3 +9,5 @@
 5. Digite os comandos no terminal do cliente para jogar;
 
 6. Para encerrar o programa em ambos os terminais, basta enviar o comando "quit" do cliente para o servidor;
+
+:)
